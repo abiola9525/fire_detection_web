@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_head %}
+<style>
+    .drop-zone {
+        border: 2px dashed #0087F7;
+        border-radius: 5px;
+        padding: 60px 20px;
+        text-align: center;
+        transition: all 0.3s ease;
+        background-color: rgba(0, 135, 247, 0.05);
+        cursor: pointer;
+    }
+    .drop-zone:hover {
+        background-color: rgba(0, 135, 247, 0.1);
+    }
+    .drop-zone.dragover {
+        background-color: rgba(0, 135, 247, 0.2);
+        border-color: #0057a7;
+    }
+    .drop-zone-prompt {
+        font-size: 1.5rem;
+        color: #0087F7;
+        margin-bottom: 20px;
+    }
+    .drop-zone-thumb {
+        max-width: 100%;
+        max-height: 300px;
+        margin-top: 20px;
+        display: none;
+    }
+    .file-info {
+        margin-top: 10px;
+        display: none;
+    }
+    .hero-section {
+        background: linear-gradient(135deg, #ff7e5f, #feb47b);
+        color: white;
+        padding: 100px 0;
+        margin-bottom: 50px;
+    }
+    .feature-card {
+        transition: transform 0.3s ease;
+        height: 100%;
+    }
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+    .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+        color: #ff7e5f;
+    }
+    .about-image-placeholder {
+        background: linear-gradient(135deg, #ff7e5f, #feb47b);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+        color: white;
+        font-size: 4rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container text-center">
+        <h1 class="display-4 fw-bold mb-4">Fire Detection System</h1>
+        <p class="lead mb-5">Upload images or videos to detect fire using advanced AI technology</p>
+        <a href="#upload-section" class="btn btn-light btn-lg px-4 me-md-2">Get Started</a>
+    </div>
+</section>
+
+<!-- Upload Section -->
+<section id="upload-section" class="container mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <h3 class="card-title mb-0">Upload File for Fire Detection</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'fire_detector:detect_fire' %}" enctype="multipart/form-data" id="uploadForm">
+                        {% csrf_token %}
+                        <div class="drop-zone" id="dropZone">
+                            <div class="drop-zone-prompt">
+                                <i class="fas fa-cloud-upload-alt mb-3" style="font-size: 3rem;"></i>
+                                <div>Drag & Drop your file here or click to browse</div>
+                                <small class="text-muted mt-2 d-block">Supported formats: JPG, PNG, MP4, AVI, MOV</small>
+                            </div>
+                            <div class="file-info" id="fileInfo">
+                                <i class="fas fa-file me-2"></i>
+                                <span id="fileName"></span>
+                            </div>
+                            <img alt="Preview" class="drop-zone-thumb" id="filePreview">
+                            {{ form.uploaded_file }}
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary w-100" id="submitBtn">
+                                <i class="fas fa-search me-2"></i>Detect Fire
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="container mb-5">
+    <h2 class="text-center mb-5">How It Works</h2>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card feature-card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-upload"></i>
+                    </div>
+                    <h4>Upload</h4>
+                    <p class="text-muted">Upload your image or video file through our easy-to-use interface</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card feature-card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <h4>Process</h4>
+                    <p class="text-muted">Our AI model analyzes your content using advanced YOLO technology</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card feature-card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h4>Results</h4>
+                    <p class="text-muted">Get instant results showing fire detection with confidence scores</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- About Section -->
+<section id="about" class="container mb-5">
+    <div class="row align-items-center">
+        <div class="col-lg-6">
+            <h2 class="mb-4">About Our Fire Detection System</h2>
+            <p class="lead">Our system uses state-of-the-art YOLO (You Only Look Once) object detection technology to identify fire in images and videos.</p>
+            <p>Early fire detection is crucial for preventing disasters and saving lives. Our AI-powered system can help identify fire hazards quickly and accurately, allowing for faster response times.</p>
+            <p>The model has been trained on thousands of images to recognize fire patterns with high accuracy and minimal false positives.</p>
+        </div>
+        <div class="col-lg-6">
+            <div class="about-image-placeholder">
+                <i class="fas fa-fire"></i>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('id_uploaded_file'); // Django form field ID
+        const filePreview = document.getElementById('filePreview');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        // Check if all elements exist
+        if (!dropZone || !fileInput || !filePreview || !fileInfo || !fileName || !submitBtn) {
+            console.error('Some required elements are missing');
+            return;
+        }
+        
+        // Hide the file input visually
+        fileInput.style.display = 'none';
+        
+        // Click on drop zone to trigger file input
+        dropZone.addEventListener('click', function(e) {
+            e.preventDefault();
+            fileInput.click();
+        });
+        
+        // Handle file selection
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files && fileInput.files.length > 0) {
+                updateFileInfo(fileInput.files[0]);
+            }
+        });
+        
+        // Handle drag and drop
+        dropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        
+        dropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+        });
+        
+        dropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                updateFileInfo(e.dataTransfer.files[0]);
+            }
+        });
+        
+        // Update file info and preview
+        function updateFileInfo(file) {
+            try {
+                fileName.textContent = file.name;
+                fileInfo.style.display = 'block';
+                
+                // Show preview for images
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        filePreview.src = e.target.result;
+                        filePreview.style.display = 'block';
+                    };
+                    reader.onerror = function() {
+                        console.error('Error reading file');
+                        filePreview.style.display = 'none';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    // For videos or other files, hide preview
+                    filePreview.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error updating file info:', error);
+            }
+        }
+        
+        // Form submission
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            if (!fileInput.files || fileInput.files.length === 0) {
+                e.preventDefault();
+                alert('Please select a file to upload');
+                return false;
+            }
+            
+            // Validate file type
+            const file = fileInput.files[0];
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'video/mp4', 'video/avi', 'video/mov'];
+            
+            if (!allowedTypes.includes(file.type)) {
+                e.preventDefault();
+                alert('Please select a valid image (JPG, PNG) or video (MP4, AVI, MOV) file.');
+                return false;
+            }
+            
+            // Check file size (50MB limit)
+            const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+            if (file.size > maxSize) {
+                e.preventDefault();
+                alert('File size must be less than 50MB.');
+                return false;
+            }
+            
+            // Disable button and show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...';
+        });
+        
+    } catch (error) {
+        console.error('Error initializing upload form:', error);
+    }
+});
+</script>
+{% endblock %}

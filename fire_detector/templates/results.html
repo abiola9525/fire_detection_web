@@ -1,0 +1,295 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_head %}
+<style>
+    .result-card {
+        transition: transform 0.3s ease;
+    }
+    .result-card:hover {
+        transform: scale(1.02);
+    }
+    .confidence-meter {
+        height: 10px;
+        border-radius: 5px;
+        background-color: #e9ecef;
+        overflow: hidden;
+        margin-bottom: 5px;
+    }
+    .confidence-value {
+        height: 100%;
+        border-radius: 5px;
+        transition: width 1s ease-in-out;
+    }
+    .fire-detected {
+        background-color: #dc3545;
+    }
+    .no-fire {
+        background-color: #28a745;
+    }
+    .detection-badge {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+    .loading-spinner {
+        width: 3rem;
+        height: 3rem;
+    }
+    .comparison-container {
+        position: relative;
+        overflow: hidden;
+    }
+    .image-comparison {
+        display: flex;
+        transition: transform 0.3s ease;
+    }
+    .image-comparison img {
+        max-width: 100%;
+        height: auto;
+    }
+    .comparison-slider {
+        margin-top: 10px;
+    }
+    .video-container {
+        position: relative;
+        background: #000;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .video-error {
+        background: #f8f9fa;
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'fire_detector:home' %}">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Detection Results</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Detection Results</h3>
+                    <a href="{% url 'fire_detector:home' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-upload me-2"></i>Upload New File
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if not processing_complete %}
+                        <div class="text-center py-5">
+                            <div class="spinner-border loading-spinner text-primary mb-3" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <h4 class="mt-3">Processing your file...</h4>
+                            <p class="text-muted">This may take a few moments depending on the file size.</p>
+                            
+                            <script>
+                                // Auto-refresh the page every 5 seconds to check if processing is complete
+                                setTimeout(function() {
+                                    window.location.reload();
+                                }, 5000);
+                            </script>
+                        </div>
+                    {% else %}
+                        <div class="row">
+                            <div class="col-lg-8">
+                                {% if detection.is_video %}
+                                    <div class="card result-card mb-4">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">Processed Video</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="video-container">
+                                                <video controls class="w-100" preload="metadata">
+                                                    <source src="{{ detection.result_file.url }}" type="video/mp4">
+                                                    <source src="{{ detection.result_file.url }}" type="video/webm">
+                                                    <div class="video-error">
+                                                        <i class="fas fa-exclamation-triangle mb-2"></i>
+                                                        <p>Your browser doesn't support this video format.</p>
+                                                        <a href="{{ detection.result_file.url }}" class="btn btn-primary" download>
+                                                            <i class="fas fa-download me-2"></i>Download Video
+                                                        </a>
+                                                    </div>
+                                                </video>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card result-card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">Original Video</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="video-container">
+                                                <video controls class="w-100" preload="metadata">
+                                                    <source src="{{ detection.uploaded_file.url }}" type="video/mp4">
+                                                    <source src="{{ detection.uploaded_file.url }}" type="video/webm">
+                                                    <div class="video-error">
+                                                        <i class="fas fa-exclamation-triangle mb-2"></i>
+                                                        <p>Your browser doesn't support this video format.</p>
+                                                        <a href="{{ detection.uploaded_file.url }}" class="btn btn-primary" download>
+                                                            <i class="fas fa-download me-2"></i>Download Video
+                                                        </a>
+                                                    </div>
+                                                </video>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="card result-card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">Image Comparison</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="comparison-container" id="comparisonContainer">
+                                                <div class="image-comparison" id="imageComparison">
+                                                    <div class="original-image">
+                                                        <h6 class="text-center mb-2">Original Image</h6>
+                                                        <img src="{{ detection.uploaded_file.url }}" alt="Original Image" class="img-fluid">
+                                                    </div>
+                                                    <div class="processed-image">
+                                                        <h6 class="text-center mb-2">Processed Image</h6>
+                                                        <img src="{{ detection.result_file.url }}" alt="Processed Image" class="img-fluid">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <label for="comparisonSlider" class="form-label">Slide to compare images</label>
+                                                <input type="range" class="form-range comparison-slider" id="comparisonSlider" min="0" max="100" value="50">
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-lg-4">
+                                <div class="card result-card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Detection Summary</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="text-center mb-4">
+                                            {% if detection.has_fire %}
+                                                <div class="badge bg-danger detection-badge mb-3">
+                                                    <i class="fas fa-fire me-2"></i>Fire Detected
+                                                </div>
+                                            {% else %}
+                                                <div class="badge bg-success detection-badge mb-3">
+                                                    <i class="fas fa-check-circle me-2"></i>No Fire Detected
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <h6>Confidence Score</h6>
+                                        <div class="confidence-meter">
+                                            <div class="confidence-value {% if detection.has_fire %}fire-detected{% else %}no-fire{% endif %}" 
+                                                 style="width: {{ confidence_percentage }}%"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <small>0%</small>
+                                            <small>{{ confidence_percentage|floatformat:1 }}%</small>
+                                            <small>100%</small>
+                                        </div>
+                                        
+                                        <hr>
+                                        
+                                        <div class="mb-3">
+                                            <h6>File Information</h6>
+                                            <p class="mb-1"><strong>File Type:</strong> {% if detection.is_video %}Video{% else %}Image{% endif %}</p>
+                                            <p class="mb-1"><strong>File Name:</strong> {{ detection.filename }}</p>
+                                            <p class="mb-0"><strong>Uploaded:</strong> {{ detection.created_at|date:"F j, Y, g:i a" }}</p>
+                                        </div>
+                                        
+                                        <hr>
+                                        
+                                        <div class="d-grid gap-2">
+                                            <a href="{{ detection.result_file.url }}" download class="btn btn-outline-primary">
+                                                <i class="fas fa-download me-2"></i>Download Result
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card result-card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">What to do next?</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if detection.has_fire %}
+                                            <div class="alert alert-danger">
+                                                <h6><i class="fas fa-exclamation-triangle me-2"></i>Fire Detected!</h6>
+                                                <p class="mb-0">If this is a real-time situation, please take appropriate action and contact emergency services if necessary.</p>
+                                            </div>
+                                            <ul class="list-group list-group-flush">
+                                                <li class="list-group-item"><i class="fas fa-phone me-2 text-danger"></i>Call emergency services (911)</li>
+                                                <li class="list-group-item"><i class="fas fa-bell me-2 text-warning"></i>Activate fire alarms</li>
+                                                <li class="list-group-item"><i class="fas fa-running me-2 text-primary"></i>Evacuate the area</li>
+                                            </ul>
+                                        {% else %}
+                                            <div class="alert alert-success">
+                                                <h6><i class="fas fa-check-circle me-2"></i>No Fire Detected</h6>
+                                                <p class="mb-0">The system did not detect any fire in the uploaded file.</p>
+                                            </div>
+                                            <p>Continue monitoring for potential fire hazards and maintain regular safety checks.</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Image comparison slider functionality
+    const slider = document.getElementById('comparisonSlider');
+    const comparisonContainer = document.getElementById('comparisonContainer');
+    const imageComparison = document.getElementById('imageComparison');
+    
+    if (slider && imageComparison) {
+        slider.addEventListener('input', function() {
+            const value = this.value;
+            imageComparison.style.transform = `translateX(${-value}%)`;
+        });
+    }
+    
+    // Handle video loading errors
+    const videos = document.querySelectorAll('video');
+    videos.forEach(video => {
+        video.addEventListener('error', function() {
+            console.log('Video failed to load, showing fallback');
+            const errorDiv = this.nextElementSibling;
+            if (errorDiv && errorDiv.classList.contains('video-error')) {
+                this.style.display = 'none';
+                errorDiv.style.display = 'block';
+            }
+        });
+        
+        video.addEventListener('loadeddata', function() {
+            console.log('Video loaded successfully');
+        });
+    });
+});
+</script>
+{% endblock %}
